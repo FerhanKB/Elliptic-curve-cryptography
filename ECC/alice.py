@@ -1,0 +1,30 @@
+import socket
+import ECC as ecc
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(('127.0.0.1', 8080))
+f = open('message.txt','w')
+f.write('NUKE code is 370058.')
+f.close()
+privateKey = 7
+print('\nGenerating Public Key for Alice')
+publicKey = ecc.generatePublicKey(privateKey)
+client.send(str(publicKey[0]).encode())
+client.send(str(publicKey[1]).encode())
+publicKeyrecvX = client.recv(8192)
+publicKeyrecvY = client.recv(8192)
+print('\nPublic Key of Bob recieved:',publicKeyrecvX.decode(),publicKeyrecvY.decode())
+f = open("message.txt", "r")
+data = f.read()
+f.close()
+print('\nMessage: ',data)
+cipher = []
+print('\nEncrypting Message...')
+f = open("message.txt", "w")
+for i in range(len(data)):
+  m = ord(data[i])
+  C1,C2 = ecc.encryptionECC((int(m),0),privateKey,(int(publicKeyrecvX.decode()),int(publicKeyrecvY.decode())))
+  f.write(str(C1)+' '+str(C2)+'\n')
+f.close()
+client.send('message.txt'.encode())
+client.close()
+print("\nEncryption Done. File sent to Bob.")
